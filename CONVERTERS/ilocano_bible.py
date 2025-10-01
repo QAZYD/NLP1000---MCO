@@ -3,9 +3,9 @@ from pathlib import Path
 import pandas as pd
 
 def clean_bible_text_to_excel():
-    input_file = Path("RAW_FILES/waray_waray_bible.txt")
-    output_file_txt = Path("CONVERTED_FILES/waray_waray_cleaned.txt")
-    output_file_excel = Path("CONVERTED_FILES/waray_waray_bible_cleaned.xlsx")
+    input_file = Path("RAW_FILES/ilocano_bible.txt")
+    output_file_txt = Path("CONVERTED_FILES/ilocano_cleaned.txt")
+    output_file_excel = Path("CONVERTED_FILES/ilocano_bible_cleaned.xlsx")
 
     cleaned_lines = []
     current_book = None
@@ -78,7 +78,7 @@ def clean_bible_text_to_excel():
             no_refs = re.sub(r"\([^)]*\)", "", stripped).strip()
 
             # Detect book+chapter lines
-            book_chapter_match = re.match(r"^(Mateo|Lucas|Marcos)\s+(\d+)", no_refs)
+            book_chapter_match = re.match(r"^(San Mateo|San Lucas|San Marcos)\s+(\d+)", no_refs)
             if book_chapter_match:
                 if verse_block:
                     process_verse_block(verse_block, current_book, current_chapter)
