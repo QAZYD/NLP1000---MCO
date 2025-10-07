@@ -3,20 +3,20 @@ from pathlib import Path
 
 # === CONFIG ===
 base_dir = Path(__file__).resolve().parent.parent
-lang1_file = base_dir / "CONVERTED_FILES" / "spanish_bible_cleaned.xlsx"
-lang2_file = base_dir / "CONVERTED_FILES" / "chavacano_bible_cleaned.xlsx"
-output_file = base_dir / "CORPUS_FILES" / "SPA-CHA-CORPUS.xlsx"
+lang1_file = base_dir / "CONVERTED_FILES" / "chavacano_bible_cleaned.xlsx"
+lang2_file = base_dir / "CONVERTED_FILES" / "cebuano_bible_cleaned.xlsx"
+output_file = base_dir / "CORPUS_FILES" / "CHA-CEB-CORPUS.xlsx"
 
-lang1_label = "Spanish"
-lang2_label = "Chavacano"
+lang1_label = "Chavacano"
+lang2_label = "Cebuano"
 
 # === BOOK NORMALIZATION MAP ===
 book_map = {
-    # Spanish → Standard names
+    # Chavacano → Standard names
     "Mateo": "Matthew",
     "Marcos": "Mark",
     "Lucas": "Luke",
-    # Chavacano → Standard names
+    # Cebuano → Standard names
     "Mateo": "Matthew",
     "Marcos": "Mark",
     "Lucas": "Luke",
@@ -58,7 +58,7 @@ output_file.parent.mkdir(parents=True, exist_ok=True)
 # === SAVE OUTPUT ===
 merged.to_excel(output_file, index=False)
 
-print("Spanish-Chavacano parallel corpus successfully created!")
+print("Chavacano-Cebuano parallel corpus successfully created!")
 print(f"Output file: {output_file}")
 print(f"Normalized books: {sorted(set(book_map.values()))}")
 print(f"Total aligned verses: {len(merged)}")

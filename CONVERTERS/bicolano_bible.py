@@ -33,15 +33,15 @@ def clean_bible_text_to_excel():
                 if current_verse:
                     verse_num = re.match(r"^(\d+)", current_verse)
                     if verse_num:
-                        sentence = re.sub(r"^\d+\s*", "", current_verse).strip()
-                        sentence = re.sub(r"[^A-Za-z\s]", "", sentence)
+                        text = re.sub(r"^\d+\s*", "", current_verse).strip()
+                        text = re.sub(r"[^A-Za-z\s]", "", text)
                         rows.append({
                             "Book": current_book,
                             "Chapter": current_chapter,
                             "Verse": verse_num.group(1),
-                            "Sentence": sentence
+                            "Text": text
                         })
-                        segmented_sentences.append(sentence)
+                        segmented_sentences.append(text)
                 current_verse = ""
                 current_book, current_chapter = book_chapter_match.groups()
                 continue
@@ -55,15 +55,15 @@ def clean_bible_text_to_excel():
                 if current_verse:
                     verse_num = re.match(r"^(\d+)", current_verse)
                     if verse_num:
-                        sentence = re.sub(r"^\d+\s*", "", current_verse).strip()
-                        sentence = re.sub(r"[^A-Za-z\s]", "", sentence)
+                        text = re.sub(r"^\d+\s*", "", current_verse).strip()
+                        text = re.sub(r"[^A-Za-z\s]", "", text)
                         rows.append({
                             "Book": current_book,
                             "Chapter": current_chapter,
                             "Verse": verse_num.group(1),
-                            "Sentence": sentence
+                            "Text": text
                         })
-                        segmented_sentences.append(sentence)
+                        segmented_sentences.append(text)
 
                 # Handle verse range at start: n-m
                 m = re.match(r"^(\d+)-(\d+)(.*)", no_refs)
@@ -71,8 +71,8 @@ def clean_bible_text_to_excel():
                     n1, n2, verse_text = m.groups()
                     verse_text = verse_text.strip()
                     verse_text = re.sub(r"[^A-Za-z\s]", "", verse_text)
-                    rows.append({"Book": current_book, "Chapter": current_chapter, "Verse": n1, "Sentence": verse_text})
-                    rows.append({"Book": current_book, "Chapter": current_chapter, "Verse": n2, "Sentence": verse_text})
+                    rows.append({"Book": current_book, "Chapter": current_chapter, "Verse": n1, "Text": verse_text})
+                    rows.append({"Book": current_book, "Chapter": current_chapter, "Verse": n2, "Text": verse_text})
                     segmented_sentences.append(verse_text)
                     current_verse = ""
                 else:
@@ -84,15 +84,15 @@ def clean_bible_text_to_excel():
     if current_verse:
         verse_num = re.match(r"^(\d+)", current_verse)
         if verse_num:
-            sentence = re.sub(r"^\d+\s*", "", current_verse).strip()
-            sentence = re.sub(r"[^A-Za-z\s]", "", sentence)
+            text = re.sub(r"^\d+\s*", "", current_verse).strip()
+            text = re.sub(r"[^A-Za-z\s]", "", text)
             rows.append({
                 "Book": current_book,
                 "Chapter": current_chapter,
                 "Verse": verse_num.group(1),
-                "Sentence": sentence
+                "Text": text
             })
-            segmented_sentences.append(sentence)
+            segmented_sentences.append(text)
 
     # Save segmented sentences (each full sentence per line)
     output_file_sentences.parent.mkdir(parents=True, exist_ok=True)
@@ -100,8 +100,8 @@ def clean_bible_text_to_excel():
         for s in segmented_sentences:
             segfile.write(s.strip() + "\n")
 
-    # Save to Excel (Book, Chapter, Verse, Sentence separated)
-    df = pd.DataFrame(rows, columns=["Book", "Chapter", "Verse", "Sentence"])
+    # Save to Excel (Book, Chapter, Verse, Text separated)
+    df = pd.DataFrame(rows, columns=["Book", "Chapter", "Verse", "Text"])
     df.to_excel(output_file_excel, index=False)
 
 # Run cleaning

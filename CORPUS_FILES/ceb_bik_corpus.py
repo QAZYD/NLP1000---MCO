@@ -3,23 +3,26 @@ from pathlib import Path
 
 # === CONFIG ===
 base_dir = Path(__file__).resolve().parent.parent
-lang1_file = base_dir / "CONVERTED_FILES" / "spanish_bible_cleaned.xlsx"
-lang2_file = base_dir / "CONVERTED_FILES" / "chavacano_bible_cleaned.xlsx"
-output_file = base_dir / "CORPUS_FILES" / "SPA-CHA-CORPUS.xlsx"
+lang1_file = base_dir / "CONVERTED_FILES" / "cebuano_bible_cleaned.xlsx"
+lang2_file = base_dir / "CONVERTED_FILES" / "bikolano_bible_cleaned.xlsx"
+output_file = base_dir / "CORPUS_FILES" / "CEB-BIK-CORPUS.xlsx"
 
-lang1_label = "Spanish"
-lang2_label = "Chavacano"
+lang1_label = "Cebuano"
+lang2_label = "Bikolano"
 
-# === BOOK NORMALIZATION MAP ===
-book_map = {
-    # Spanish → Standard names
+# === BOOK NORMALIZATION MAPS ===
+# Cebuano → standard English names
+book_map_cebuano = {
+    "Matthew": "Matthew",
+    "Mark": "Mark",
+    "Luke": "Luke"
+}
+
+# Bikolano → standard English names
+book_map_bikolano = {
     "Mateo": "Matthew",
-    "Marcos": "Mark",
-    "Lucas": "Luke",
-    # Chavacano → Standard names
-    "Mateo": "Matthew",
-    "Marcos": "Mark",
-    "Lucas": "Luke",
+    "Markos": "Mark",
+    "Lukas": "Luke"
 }
 
 # === READ FILES ===
@@ -28,14 +31,14 @@ df2 = pd.read_excel(lang2_file)
 
 # === VERIFY REQUIRED COLUMNS ===
 required_cols = {"Book", "Chapter", "Verse", "Text"}
-for df_name, df in [("Lang1", df1), ("Lang2", df2)]:
+for df_name, df in [("Cebuano", df1), ("Bikolano", df2)]:
     missing = required_cols - set(df.columns)
     if missing:
         raise ValueError(f"{df_name} file missing columns: {missing}")
 
 # === NORMALIZE BOOK NAMES ===
-df1["Book"] = df1["Book"].map(book_map).fillna(df1["Book"])
-df2["Book"] = df2["Book"].map(book_map).fillna(df2["Book"])
+df1["Book"] = df1["Book"].map(book_map_cebuano).fillna(df1["Book"])
+df2["Book"] = df2["Book"].map(book_map_bikolano).fillna(df2["Book"])
 
 # === ALIGN BY Book, Chapter, Verse ===
 merged = pd.merge(
@@ -58,7 +61,7 @@ output_file.parent.mkdir(parents=True, exist_ok=True)
 # === SAVE OUTPUT ===
 merged.to_excel(output_file, index=False)
 
-print("Spanish-Chavacano parallel corpus successfully created!")
+print("Cebuano-Bikolano parallel corpus successfully created!")
 print(f"Output file: {output_file}")
-print(f"Normalized books: {sorted(set(book_map.values()))}")
+print(f"Normalized books: {sorted(set(book_map_bikolano.values()))}")
 print(f"Total aligned verses: {len(merged)}")
