@@ -1,6 +1,6 @@
 import re
-from pathlib import Path
 import pandas as pd
+from pathlib import Path
 
 base_dir = Path(__file__).resolve().parent.parent
 input_file = base_dir / "RAW_FILES" / "chavacano_bible.txt"
@@ -77,11 +77,11 @@ def clean_and_convert_bible(in_file, excel_out, sentences_out):
         final_lines.append(current_verse.strip())
 
     # --- Phase 3: clean and structure data ---
-    sentences = []
+    texts = []
     for line in final_lines:
         m = re.match(r"^(\d+):(\d+)\s*(.*)", line)
         if m:
-            chapter, verse, sentence = m.groups()
+            chapter, verse, text = m.groups()
 
             # Detect new book by reset to chapter 1
             if last_chapter is not None and chapter == "1" and last_chapter != "1":
@@ -92,30 +92,31 @@ def clean_and_convert_bible(in_file, excel_out, sentences_out):
             last_chapter = chapter
 
             # Remove punctuation
-            sentence = re.sub(r"[^A-Za-z\s]", "", sentence).strip()
-            data.append([current_book, chapter, verse, sentence])
-            sentences.append(sentence)
+            text = re.sub(r"[^A-Za-z\s]", "", text).strip()
+            data.append([current_book, chapter, verse, text])
+            texts.append(text)
         else:
-            # No chapter:verse found
-            sentence = re.sub(r"[^A-Za-z\s]", "", line).strip()
-            data.append([current_book, "", "", sentence])
-            sentences.append(sentence)
+            # Skip lines without chapter or verse
+            continue
 
     # --- Phase 4: write results ---
     excel_out.parent.mkdir(parents=True, exist_ok=True)
 
-    # Save to Excel (Book, Chapter, Verse, Sentence)
-    df = pd.DataFrame(data, columns=["Book", "Chapter", "Verse", "Sentence"])
+    # Save to Excel (Book, Chapter, Verse, Text)
+    df = pd.DataFrame(data, columns=["Book", "Chapter", "Verse", "Text"])
+
+    # Filter out any row without Chapter or Verse just in case
+    df = df[(df["Chapter"] != "") & (df["Verse"] != "")]
+
     df.to_excel(excel_out, index=False)
 
-    # Save segmented sentences
+    # Save segmented texts (1 per line)
     with open(sentences_out, "w", encoding="utf-8") as f:
-        for s in sentences:
-            f.write(s + "\n")
+        for t in texts:
+            f.write(t + "\n")
 
     print(f"Excel saved to: {excel_out}")
-    print(f"Sentences saved to: {sentences_out}")
-
+    print(f"Texts saved to: {sentences_out}")
 
 # Run the cleaner
 clean_and_convert_bible(input_file, excel_output, sentences_output)
