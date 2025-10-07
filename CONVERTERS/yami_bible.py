@@ -2,11 +2,12 @@ import re
 from pathlib import Path
 import pandas as pd
 
-def clean_text_to_excel(input_file, output_file):
+def clean_text_to_excel(input_file, output_excel, sentences_output):
     with open(input_file, "r", encoding="utf-8") as f:
         lines = [ln.rstrip("\n") for ln in f]
 
     verses_data = []
+    all_sentences = []
 
     i = 0
     total_lines = len(lines)
@@ -68,7 +69,7 @@ def clean_text_to_excel(input_file, output_file):
                 j += 1
             book_lines = cleaned
 
-            # 3) Join broken lines, split ranges, store chapter:verse, book, text
+            # 3) Join broken lines, split ranges, store chapter, verse, book, text
             def flush():
                 nonlocal buffer, last_verse, chapter
                 s = re.sub(r'\s+', ' ', buffer.strip())
@@ -83,18 +84,35 @@ def clean_text_to_excel(input_file, output_file):
                         chapter += 1
                     last_verse = verse_start
                     text = m.group(3).strip() if m.group(3) else ""
+
+                    # Remove punctuation (keep letters, digits, spaces)
+                    text_clean = re.sub(r'[^A-Za-z0-9\s]', '', text)
+
                     for v in range(verse_start, verse_end + 1):
                         verses_data.append({
                             "Book": current_book,
-                            "ChapterVerse": f"{chapter}:{v}",
-                            "Text": text
+                            "Chapter": chapter,
+                            "Verse": v,
+                            "Text": text_clean
                         })
+
+                        # Sentence segmentation (split on .,!,?)
+                        for s_part in re.split(r'(?<=[.!?])\s+', text):
+                            s_part = s_part.strip()
+                            if s_part:
+                                # Clean punctuation in segmented sentences too
+                                s_part_clean = re.sub(r'[^A-Za-z0-9\s]', '', s_part)
+                                all_sentences.append(s_part_clean)
+
                 else:
+                    text_clean = re.sub(r'[^A-Za-z0-9\s]', '', s)
                     verses_data.append({
                         "Book": current_book,
-                        "ChapterVerse": None,
-                        "Text": s
+                        "Chapter": chapter,
+                        "Verse": "",
+                        "Text": text_clean
                     })
+                    all_sentences.append(text_clean)
                 buffer = ""
 
             last_verse = 0
@@ -122,13 +140,21 @@ def clean_text_to_excel(input_file, output_file):
 
     # Write Excel
     df = pd.DataFrame(verses_data)
-    df = df[["Book", "ChapterVerse", "Text"]]  # reorder columns
-    df.to_excel(output_file, index=False)
-    print(f"Saved cleaned Excel to: {output_file}")
+    df = df[["Book", "Chapter", "Verse", "Text"]]
+    df.to_excel(output_excel, index=False)
+    print(f"Saved cleaned Excel to: {output_excel}")
+
+    # Write segmented sentences
+    with open(sentences_output, "w", encoding="utf-8") as sf:
+        for s in all_sentences:
+            sf.write(s.strip() + "\n")
+    print(f"Saved segmented sentences to: {sentences_output}")
 
 
-# Example usage
+# === Usage ===
 base_dir = Path(__file__).resolve().parent.parent
 input_file = base_dir / "RAW_FILES" / "yami_bible.txt"
-out_excel = base_dir / "CONVERTED_FILES" / "yami_bible_cleaned.xlsx"
-clean_text_to_excel(input_file, out_excel)
+excel_output = base_dir / "CONVERTED_FILES" / "yami_bible_cleaned.xlsx"
+sentences_output = base_dir / "CONVERTED_FILES" / "yami_sentences.txt"
+
+clean_text_to_excel(input_file, excel_output, sentences_output)
