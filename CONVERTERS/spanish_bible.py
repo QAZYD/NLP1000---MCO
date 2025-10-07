@@ -1,74 +1,52 @@
 import re
-from pathlib import Path
 import pandas as pd
+from pathlib import Path
 
-# Input/output paths
 input_file = Path("../RAW_FILES/spanish_bible.txt")
-output_file_txt = Path("../CONVERTED_FILES/spanish_cleaned.txt")
-output_file_excel = Path("../CONVERTED_FILES/spanish_bible_cleaned.xlsx")
+output_folder = Path("../CONVERTED_FILES")
+output_folder.mkdir(parents=True, exist_ok=True)
 
+excel_path = output_folder / "spanish_bible_cleaned.xlsx"
+txt_path = output_folder / "spanish_by_sentence.txt"
 
 def clean_spanish_bible():
-    books_order = ["Mathew", "Mark", "Luke"]
-    book_index = 0
-    current_book = books_order[book_index]
+    verse_rows = []
+    all_sentences = []
 
-    last_chapter = 0
-    rows = []
-    cleaned_lines = []
-
-    # Patterns
     line_re = re.compile(r"^(\d+):(\d+)\s+(.*)$")
-    remove_tags_re = re.compile(r"<[^>]+>")
-    remove_punct_re = re.compile(r'[^\w\sáéíóúüñÁÉÍÓÚÜÑ]')
-    remove_extra_spaces = re.compile(r'\s+')
+    sentence_split = re.compile(r'(?<=[.!?])\s+')
 
     with open(input_file, "r", encoding="utf-8") as f:
-        for raw_line in f:
-            line = raw_line.strip()
+        for line in f:
+            line = line.strip()
             if not line:
                 continue
 
             m = line_re.match(line)
             if not m:
-                continue  # skip malformed lines
+                continue
 
             chapter, verse, text = m.groups()
-            chapter, verse = int(chapter), int(verse)
+            text = re.sub(r"[^\w\sáéíóúüñÁÉÍÓÚÜÑ.!?]", "", text)
+            text = re.sub(r"\s+", " ", text).strip()
 
-            # --- Detect book change ---
-            if chapter == 1 and verse == 1:
-                if last_chapter != 0:
-                    book_index += 1
-                    if book_index < len(books_order):
-                        current_book = books_order[book_index]
-                    else:
-                        current_book = f"UnknownBook{book_index+1}"
+            # Save verse info
+            verse_rows.append({"ChapterVerse": f"{chapter}:{verse}", "Text": text})
 
-            last_chapter = chapter
+            # Split into sentences
+            for sentence in sentence_split.split(text):
+                sentence = sentence.strip()
+                if sentence:
+                    all_sentences.append(sentence)
 
-            # --- Cleaning ---
-            text = remove_tags_re.sub("", text)
-            text = remove_punct_re.sub("", text)
-            text = remove_extra_spaces.sub(" ", text).strip()
+    # Save Excel by verse
+    pd.DataFrame(verse_rows).to_excel(excel_path, index=False)
+    print(f"Saved Excel -> {excel_path}")
 
-            # Save cleaned line
-            cleaned_lines.append(f"{current_book}|{chapter}|{verse}|{text}")
-
-            # Save row for Excel
-            rows.append({
-                "Book": current_book,
-                "ChapterVerse": f"{chapter}:{verse}",
-                "Text": text
-            })
-
-    # --- Save Excel ---
-    output_file_excel.parent.mkdir(parents=True, exist_ok=True)
-    df = pd.DataFrame(rows, columns=["Book", "ChapterVerse", "Text"])
-    df.to_excel(output_file_excel, index=False)
-    
-    print(f"Excel file saved -> {output_file_excel}")
-
+    # Save sentences (1 per line)
+    with open(txt_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(all_sentences))
+    print(f"Saved Sentences TXT -> {txt_path}")
 
 if __name__ == "__main__":
     clean_spanish_bible()
